@@ -12,6 +12,36 @@ const normalizeText = (text: string) => text.trim();
 
 const uniqueFlags = (flags: string[]) => Array.from(new Set(flags));
 
+const NEGATIVE_WORDS = [
+  "terrible",
+  "horrible",
+  "awful",
+  "worst",
+  "hate",
+  "disgusting",
+  "useless",
+  "broken",
+  "scam",
+  "fraud",
+  "waste",
+  "disappointed",
+  "poor",
+  "bad",
+  "never again",
+];
+const POSITIVE_WORDS = [
+  "amazing",
+  "excellent",
+  "fantastic",
+  "love",
+  "perfect",
+  "best",
+  "great",
+  "awesome",
+  "outstanding",
+  "wonderful",
+];
+
 export const calculateReviewRisk = ({
   rating,
   text,
@@ -47,20 +77,37 @@ export const calculateReviewRisk = ({
     flags.push("Extreme rating detected");
   }
 
-  // Heuristic 4: repeated punctuation / all-caps text
-  const repeatedPunctuationCount = (normalizedText.match(/([!?\.])\1+/g) || [])
-    .length;
-  const uppercaseCount = (normalizedText.match(/[A-Z]/g) || []).length;
-  const uppercaseRatio = normalizedText.length
-    ? uppercaseCount / normalizedText.length
-    : 0;
-
-  if (
-    repeatedPunctuationCount >= 2 ||
-    (uppercaseRatio > 0.5 && normalizedText.length >= 15)
-  ) {
+  // Heuristic 4: repeated words (e.g. "great great great")
+  const words = lowerText.split(/\s+/).filter(Boolean);
+  const wordFreq: Record<string, number> = {};
+  words.forEach((w) => {
+    wordFreq[w] = (wordFreq[w] || 0) + 1;
+  });
+  const maxRepeat = Math.max(...Object.values(wordFreq));
+  if (words.length >= 4 && maxRepeat / words.length > 0.35) {
     score += 20;
-    flags.push("Aggressive or unusual punctuation/casing detected");
+    flags.push("Excessive word repetition detected");
+  }
+
+  // Heuristic 5: repeated characters (e.g. "sooooo good", "amazinggggg")
+  if (/([a-zA-Z])\1{3,}/.test(normalizedText)) {
+    score += 15;
+    flags.push("Repeated characters detected");
+  }
+
+  // Heuristic 6: rating-sentiment mismatch
+  const hasNegativeSentiment = NEGATIVE_WORDS.some((w) =>
+    lowerText.includes(w),
+  );
+  const hasPositiveSentiment = POSITIVE_WORDS.some((w) =>
+    lowerText.includes(w),
+  );
+  if (
+    (rating >= 4 && hasNegativeSentiment) ||
+    (rating <= 2 && hasPositiveSentiment)
+  ) {
+    score += 25;
+    flags.push("Rating does not match review sentiment");
   }
 
   return {

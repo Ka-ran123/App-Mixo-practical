@@ -2,7 +2,7 @@ import * as Yup from "yup";
 
 const createSchema = Yup.object().shape({
   productId: Yup.string().required("Product is required"),
-  author: Yup.string().required("Author name is required"),
+  author: Yup.string().required("Author is required"),
   rating: Yup.number()
     .min(1, "Rating must be at least 1")
     .max(5, "Rating can be at most 5")

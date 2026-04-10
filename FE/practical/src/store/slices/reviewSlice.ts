@@ -41,7 +41,7 @@ const initialState: ReviewState = {
   pagination: {
     total: 0,
     page: 1,
-    limit: 10,
+    limit: 5,
     totalPages: 0,
   },
   loading: false,
@@ -52,7 +52,7 @@ const initialState: ReviewState = {
 export const fetchReviews = createAsyncThunk(
   "reviews/fetchReviews",
   async (params: { page?: number; perPage?: number } = {}) => {
-    const { page = 1, perPage = 10 } = params;
+    const { page = 1, perPage = 5 } = params;
     const response = await api.get("/reviews", {
       params: {
         page,
