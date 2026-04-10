@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { validateProductCreation } from "../validator/validation.js";
+import { validateRequest } from "../middleware/validate-middleware.js";
+import rateLimiter from "../middleware/rate-limit.js";
+import { createProduct, getProducts, } from "../controllers/product-controller.js";
+const router = Router();
+router.use(rateLimiter);
+router.post("/", validateProductCreation, validateRequest, createProduct);
+router.get("/", getProducts);
+export default router;
